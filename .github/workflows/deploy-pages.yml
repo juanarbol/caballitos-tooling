@@ -3,6 +3,10 @@ name: Deploy static site to GitHub Pages
 on:
   push:
     branches: [master, main]
+    paths:
+      - index.html
+      - src/**
+
   workflow_dispatch:
 
 permissions:

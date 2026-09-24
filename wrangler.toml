@@ -1,0 +1,3 @@
+name = "caballitos-summary-notion-caballitos"
+main = "cf-workers/summary-notion.js"
+compatibility_date = "2026-09-23"
