@@ -77,9 +77,27 @@ export function digitsOnly(value) {
 
 export function toNumber(value, fallback = 0) {
   if (value === null || value === undefined || value === '') return fallback;
-  const raw = typeof value === 'number' ? value : String(value).replace(',', '.');
-  const n = Number.parseFloat(raw);
+
+  const raw = typeof value === 'number' ? String(value) : String(value).trim();
+  if (!raw) return fallback;
+
+  const normalized = raw.replace(/\s+/g, '').replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(normalized)) return fallback;
+
+  const n = Number.parseFloat(normalized);
   return Number.isFinite(n) ? n : fallback;
+}
+
+export function hasPositiveNumericQuantity(value) {
+  if (value === null || value === undefined || value === '') return false;
+  const n = toNumber(value, Number.NaN);
+  return Number.isFinite(n) && n > 0;
+}
+
+export function shouldSkipQuantity(value, threshold = 1) {
+  if (!hasPositiveNumericQuantity(value)) return false;
+  const safeThreshold = Number.isFinite(threshold) ? Math.max(threshold, 0) : 1;
+  return Number(value) < safeThreshold;
 }
 
 export function escapeHtml(value) {
@@ -221,8 +239,9 @@ export const catalogs = {
         Status: this.status,
       };
     },
-    shouldSkip(book) {
-      return !book.titulo || !book.precio || book.precio <= 0 || !book.cantidad || book.cantidad <= 3;
+    shouldSkip(book, threshold = 1) {
+      if (!book.titulo || !book.precio || book.precio <= 0) return true;
+      return shouldSkipQuantity(book.cantidad, threshold);
     },
   },
   siglo: {
@@ -313,8 +332,9 @@ export const catalogs = {
         Status: this.status,
       };
     },
-    shouldSkip(book) {
-      return !book.titulo || !book.precio || book.precio <= 0 || !book.bodega || book.bodega <= 10;
+    shouldSkip(book, threshold = 1) {
+      if (!book.titulo || !book.precio || book.precio <= 0) return true;
+      return shouldSkipQuantity(book.bodega, threshold);
     },
   },
 };
@@ -325,7 +345,10 @@ export function buildCatalogCsv(workbook, catalogKey, options = {}) {
     throw new Error(`Unsupported catalog: ${catalogKey}`);
   }
 
-  const skipMode = options.skipMode || 'default';
+  const skipThreshold = Number.isFinite(Number(options.skipThreshold))
+    ? Number(options.skipThreshold)
+    : 1;
+
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
   const books = catalog.readCatalog(rows);
@@ -336,7 +359,7 @@ export function buildCatalogCsv(workbook, catalogKey, options = {}) {
   let count = 0;
 
   for (const book of books) {
-    const shouldSkip = skipMode === 'none' ? false : catalog.shouldSkip(book);
+    const shouldSkip = catalog.shouldSkip(book, skipThreshold);
     if (shouldSkip) continue;
     const row = catalog.convertRow(book, seenHandles, seenSkus);
     lines.push(csvRow(projectRow(row, MAIN_HEADER)));

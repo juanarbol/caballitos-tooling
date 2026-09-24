@@ -47,7 +47,7 @@ describe('catalog conversion', () => {
     const wb = XLSX.utils.book_new();
     const rows = [
       ['ISBN', 'AÑO', 'CATEGORIA', 'NOMBRE LIBRO', 'AUTOR', 'EDITORIAL', 'CANTIDAD', 'PVP', 'link imagen'],
-      ['9781234567890', '', 'ADMINISTRACION', 'Mi libro', 'Autor X', 'Editorial Y', '4', '12000', 'https://example.com/img.jpg'],
+      ['9781234567890', '', 'ADMINISTRACION', 'Mi libro', 'Autor X', 'Editorial Y', '1', '12000', 'https://example.com/img.jpg'],
     ];
     const sheet = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, sheet, 'Catalogo');
@@ -62,7 +62,7 @@ describe('catalog conversion', () => {
     const wb = XLSX.utils.book_new();
     const rows = [
       ['ISBN', 'CODIGO', 'TITULO', 'AUTOR', 'EDITORIAL', 'BODEGA', 'PRECIO', 'LINK_IMAGEN', 'RESEÑA'],
-      ['9781234567890', 'A-100', 'Libro del siglo', 'Autor Z', 'Editorial W', '11', '15000', 'https://example.com/img.jpg', 'Revisión'],
+      ['9781234567890', 'A-100', 'Libro del siglo', 'Autor Z', 'Editorial W', '1', '15000', 'https://example.com/img.jpg', 'Revisión'],
     ];
     const sheet = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, sheet, 'Catalogo');
@@ -73,7 +73,7 @@ describe('catalog conversion', () => {
     expect(result.csvText).toContain('Libro del siglo');
   });
 
-  it('allows disabling the default skip filter for Icaro', () => {
+  it('skips rows when the quantity is smaller than the configured threshold', () => {
     const wb = XLSX.utils.book_new();
     const rows = [
       ['ISBN', 'AÑO', 'CATEGORIA', 'NOMBRE LIBRO', 'AUTOR', 'EDITORIAL', 'CANTIDAD', 'PVP', 'link imagen'],
@@ -82,9 +82,9 @@ describe('catalog conversion', () => {
     const sheet = XLSX.utils.aoa_to_sheet(rows);
     XLSX.utils.book_append_sheet(wb, sheet, 'Catalogo');
 
-    const result = buildCatalogCsv(wb, 'icaro', { skipMode: 'none' });
-    expect(result.count).toBe(1);
-    expect(result.csvText).toContain('Mi libro');
+    const result = buildCatalogCsv(wb, 'icaro', { skipThreshold: 10 });
+    expect(result.count).toBe(0);
+    expect(result.csvText).toContain('Handle,Title');
   });
 
   it('exposes both catalog handlers', () => {

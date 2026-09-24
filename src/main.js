@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { buildCatalogCsv, validateCatalogSchema, catalogs } from './catalogs';
 
 const catalogSelect = document.getElementById('catalogSelect');
-const skipModeSelect = document.getElementById('skipModeSelect');
+const skipThresholdInput = document.getElementById('skipThresholdInput');
 const fileInput = document.getElementById('fileInput');
 const convertBtn = document.getElementById('convertBtn');
 const statusBadge = document.getElementById('statusBadge');
@@ -49,8 +49,11 @@ async function onConvertClick() {
       throw new Error(schema.errors.join('; '));
     }
 
+    const rawThreshold = String(skipThresholdInput.value || '').trim();
+    const skipThreshold = /^\d+(\.\d+)?$/.test(rawThreshold) ? Number(rawThreshold) : 1;
+
     const { csvText, fileName, count } = buildCatalogCsv(workbook, catalogKey, {
-      skipMode: skipModeSelect.value,
+      skipThreshold,
     });
     productCount.textContent = String(count);
     triggerDownload(csvText, fileName);

@@ -29,14 +29,16 @@
           </label>
 
           <label class="block w-full md:max-w-md">
-            <span class="mb-2 block text-sm font-medium text-slate-700">Omitir filas con stock bajo</span>
-            <select
-              id="skipModeSelect"
+            <span class="mb-2 block text-sm font-medium text-slate-700">Omitir si cantidad es menor que</span>
+            <input
+              id="skipThresholdInput"
+              type="number"
+              min="0"
+              step="1"
+              value="1"
+              placeholder="Ej: 5"
               class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-            >
-              <option value="default">Predeterminado</option>
-              <option value="none">No omitir</option>
-            </select>
+            />
           </label>
 
           <label class="block w-full md:max-w-md">
