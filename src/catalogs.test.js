@@ -56,6 +56,11 @@ describe('catalog conversion', () => {
     expect(result.count).toBe(1);
     expect(result.csvText).toContain('Handle,Title');
     expect(result.csvText).toContain('Mi libro');
+    expect(result.csvText).toContain('\nmi-libro,');
+    expect(result.csvText).toContain('ICARO-9781234567890');
+    expect(result.csvText).not.toContain('ONLINE');
+    expect(result.csvText).toContain('Procedencia,PROPIO,');
+    expect(result.csvText).toContain(',ICARO,');
   });
 
   it('builds Siglo CSV rows for a valid workbook', () => {
@@ -71,6 +76,40 @@ describe('catalog conversion', () => {
     expect(result.count).toBe(1);
     expect(result.csvText).toContain('SIGLO');
     expect(result.csvText).toContain('Libro del siglo');
+    expect(result.csvText).toContain('Procedencia,PROPIO,');
+    expect(result.csvText).toContain(',SIGLO,');
+  });
+
+  it.each([
+    ['icaro', 'ICARO', 'ICARO-9781234567890-CONSIG', 'ICARO-9781234567890-CONSIG-VIRTUAL', 'mi-libro-icaro-consig', 'mi-libro-icaro-consig-virtual'],
+    ['siglo', 'SIGLO', 'SIGLO-9781234567890-CONSIG', 'SIGLO-9781234567890-CONSIG-VIRTUAL', 'libro-del-siglo-siglo-consig', 'libro-del-siglo-siglo-consig-virtual'],
+  ])('uses the selected consignment SKU, handle, and origin for %s', (catalogKey, vendor, consignmentSku, virtualSku, consignmentHandle, virtualHandle) => {
+    const wb = XLSX.utils.book_new();
+    const rows = catalogKey === 'icaro'
+      ? [
+        ['ISBN', 'AÑO', 'CATEGORIA', 'NOMBRE LIBRO', 'AUTOR', 'EDITORIAL', 'CANTIDAD', 'PVP', 'link imagen'],
+        ['9781234567890', '', 'ADMINISTRACION', 'Mi libro', 'Autor X', 'Editorial Y', '1', '12000', ''],
+      ]
+      : [
+        ['ISBN', 'CODIGO', 'TITULO', 'AUTOR', 'EDITORIAL', 'BODEGA', 'PRECIO', 'LINK_IMAGEN', 'RESEÑA'],
+        ['9781234567890', 'A-100', 'Libro del siglo', 'Autor Z', 'Editorial W', '1', '15000', '', ''],
+      ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Catalogo');
+
+    const consignmentResult = buildCatalogCsv(wb, catalogKey, { consignmentType: 'consignment' });
+    const virtualResult = buildCatalogCsv(wb, catalogKey, { consignmentType: 'virtual' });
+    const draftResult = buildCatalogCsv(wb, catalogKey, { status: 'draft' });
+
+    expect(consignmentResult.csvText).toContain(consignmentSku);
+    expect(virtualResult.csvText).toContain(virtualSku);
+    expect(consignmentResult.csvText).toContain(',active\n');
+    expect(draftResult.csvText).toContain(',draft\n');
+    expect(consignmentResult.csvText).toContain(`\n${consignmentHandle},`);
+    expect(virtualResult.csvText).toContain(`\n${virtualHandle},`);
+    expect(consignmentResult.csvText).toContain(`Procedencia,CONSIGNACION ${vendor},`);
+    expect(virtualResult.csvText).toContain(`Procedencia,CONSIGNACION ${vendor} VIRTUAL,`);
+    expect(consignmentResult.csvText).toContain(`,${vendor}-CONSIGNACION,`);
+    expect(virtualResult.csvText).toContain(`,${vendor}-CONSIGNACION-VIRTUAL,`);
   });
 
   it('skips rows when the quantity is smaller than the configured threshold', () => {

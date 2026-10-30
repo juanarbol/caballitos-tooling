@@ -4,6 +4,8 @@ import { buildCatalogCsv, validateCatalogSchema, catalogs } from './catalogs';
 
 const catalogSelect = document.getElementById('catalogSelect');
 const skipThresholdInput = document.getElementById('skipThresholdInput');
+const consignmentTypeSelect = document.getElementById('consignmentTypeSelect');
+const productStatusSelect = document.getElementById('productStatusSelect');
 const fileInput = document.getElementById('fileInput');
 const convertBtn = document.getElementById('convertBtn');
 const statusBadge = document.getElementById('statusBadge');
@@ -54,6 +56,8 @@ async function onConvertClick() {
 
     const { csvText, fileName, count } = buildCatalogCsv(workbook, catalogKey, {
       skipThreshold,
+      consignmentType: consignmentTypeSelect.value,
+      status: productStatusSelect.value,
     });
     productCount.textContent = String(count);
     triggerDownload(csvText, fileName);

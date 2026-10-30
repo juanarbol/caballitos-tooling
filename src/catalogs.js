@@ -3,8 +3,7 @@ import * as XLSX from 'xlsx';
 export const PRODUCT_CATEGORY = 'Media > Books > Print Books';
 export const TYPE = 'Libro Físico';
 export const PUBLISHED = 'true';
-export const OPTION1_NAME = 'Title';
-export const OPTION1_VALUE = 'Default Title';
+export const OPTION1_NAME = 'Procedencia';
 export const INVENTORY_TRACKER = 'shopify';
 export const INVENTORY_POLICY = 'deny';
 export const FULFILLMENT_SERVICE = 'manual';
@@ -157,11 +156,23 @@ export function projectRow(row, header) {
   return header.map((key) => (row[key] === undefined ? '' : row[key]));
 }
 
+function getOriginValue(consignmentType, vendor) {
+  if (consignmentType === 'virtual') return `CONSIGNACION ${vendor} VIRTUAL`;
+  if (consignmentType === 'consignment') return `CONSIGNACION ${vendor}`;
+  return 'PROPIO';
+}
+
+function getVendorName(consignmentType, vendor) {
+  if (consignmentType === 'virtual') return `${vendor}-CONSIGNACION-VIRTUAL`;
+  if (consignmentType === 'consignment') return `${vendor}-CONSIGNACION`;
+  return vendor;
+}
+
 export const catalogs = {
   icaro: {
     label: 'Icaro',
     vendor: 'ICARO',
-    status: 'draft',
+    status: 'active',
     fileName: 'icaro_import.csv',
     readCatalog(rows) {
       const headerRowIndex = rows.findIndex((row) => Array.isArray(row) && row.includes('ISBN') && row.includes('NOMBRE LIBRO'));
@@ -191,14 +202,22 @@ export const catalogs = {
         linkImagen: cleanText(row[idx.linkImagen]),
       }));
     },
-    convertRow(book, seenHandles, seenSkus) {
+    convertRow(book, seenHandles, seenSkus, consignmentType = 'none', status = this.status) {
       const title = book.titulo;
       const isbnDigits = digitsOnly(book.isbn);
       const barcode = isbnDigits;
-      const handleBase = slugify(title) || slugify(book.editorial) || 'producto';
+      const consignmentSuffix = consignmentType === 'virtual' ? 'CONSIG-VIRTUAL' : 'CONSIG';
+      const handleBase = [
+        slugify(title) || slugify(book.editorial) || 'producto',
+        consignmentType === 'none' ? '' : slugify(this.vendor),
+        consignmentType === 'none' ? '' : consignmentSuffix.toLowerCase(),
+      ].filter(Boolean).join('-');
       const handle = makeUnique(handleBase, seenHandles, isbnDigits.slice(-6) || book.editorial || 'icaro');
-      const skuBase = `ICARO-${isbnDigits || slugify(title) || 'CONV'}-ONLINE`;
+      const skuBase = consignmentType === 'none'
+        ? `ICARO-${isbnDigits || slugify(title) || 'CONV'}`
+        : `ICARO-${isbnDigits || slugify(title) || 'CONV'}-${consignmentSuffix}`;
       const sku = makeUnique(skuBase, seenSkus);
+      const originValue = getOriginValue(consignmentType, this.vendor);
       const bodyHtml = toBodyHtml(title);
       const seoDescription = cleanText(`${book.autor} ${book.editorial}` || title).slice(0, 320);
       const authorAndCategory = [book.autor, book.categoria].filter(Boolean).join(', ');
@@ -207,13 +226,13 @@ export const catalogs = {
         Handle: handle,
         Title: title,
         'Body (HTML)': bodyHtml,
-        Vendor: this.vendor,
+        Vendor: getVendorName(consignmentType, this.vendor),
         'Product Category': PRODUCT_CATEGORY,
         Type: TYPE,
         Tags: authorAndCategory,
         Published: PUBLISHED,
         'Option1 Name': OPTION1_NAME,
-        'Option1 Value': OPTION1_VALUE,
+        'Option1 Value': originValue,
         'Variant SKU': sku,
         'Variant Grams': '',
         'Variant Inventory Tracker': INVENTORY_TRACKER,
@@ -236,7 +255,7 @@ export const catalogs = {
         'Proveedor (product.metafields.book.vendor)': this.vendor,
         'Autor (product.metafields.custom.author)': book.autor,
         'Variant Weight Unit': WEIGHT_UNIT,
-        Status: this.status,
+        Status: status,
       };
     },
     shouldSkip(book, threshold = 1) {
@@ -247,7 +266,7 @@ export const catalogs = {
   siglo: {
     label: 'Siglo',
     vendor: 'SIGLO',
-    status: 'draft',
+    status: 'active',
     fileName: 'siglo_import.csv',
     readCatalog(rows) {
       const header = rows[0].map((h) => cleanText(h));
@@ -285,14 +304,22 @@ export const catalogs = {
         resena: cleanText(row[idx.resena]),
       }));
     },
-    convertRow(book, seenHandles, seenSkus) {
+    convertRow(book, seenHandles, seenSkus, consignmentType = 'none', status = this.status) {
       const title = book.titulo;
       const isbnDigits = digitsOnly(book.isbn) || digitsOnly(book.idbarras) || digitsOnly(book.codigo);
       const barcode = digitsOnly(book.idbarras) || isbnDigits;
-      const handleBase = slugify(title) || slugify(book.codigo) || 'producto';
+      const consignmentSuffix = consignmentType === 'virtual' ? 'CONSIG-VIRTUAL' : 'CONSIG';
+      const handleBase = [
+        slugify(title) || slugify(book.codigo) || 'producto',
+        consignmentType === 'none' ? '' : slugify(this.vendor),
+        consignmentType === 'none' ? '' : consignmentSuffix.toLowerCase(),
+      ].filter(Boolean).join('-');
       const handle = makeUnique(handleBase, seenHandles, isbnDigits.slice(-6) || book.codigo);
-      const skuBase = `SIGLO-${isbnDigits || book.codigo}-CONV`;
+      const skuBase = consignmentType === 'none'
+        ? `SIGLO-${isbnDigits || book.codigo}-CONV`
+        : `SIGLO-${isbnDigits || book.codigo}-${consignmentSuffix}`;
       const sku = makeUnique(skuBase, seenSkus);
+      const originValue = getOriginValue(consignmentType, this.vendor);
       const bodyHtml = toBodyHtml(book.resena);
       const seoDescription = cleanText(book.resena).slice(0, 320);
 
@@ -300,13 +327,13 @@ export const catalogs = {
         Handle: handle,
         Title: title,
         'Body (HTML)': bodyHtml,
-        Vendor: this.vendor,
+        Vendor: getVendorName(consignmentType, this.vendor),
         'Product Category': PRODUCT_CATEGORY,
         Type: TYPE,
         Tags: book.autor,
         Published: PUBLISHED,
         'Option1 Name': OPTION1_NAME,
-        'Option1 Value': OPTION1_VALUE,
+        'Option1 Value': originValue,
         'Variant SKU': sku,
         'Variant Grams': book.peso || '',
         'Variant Inventory Tracker': INVENTORY_TRACKER,
@@ -329,7 +356,7 @@ export const catalogs = {
         'Proveedor (product.metafields.book.vendor)': this.vendor,
         'Autor (product.metafields.custom.author)': book.autor,
         'Variant Weight Unit': WEIGHT_UNIT,
-        Status: this.status,
+        Status: status,
       };
     },
     shouldSkip(book, threshold = 1) {
@@ -348,6 +375,10 @@ export function buildCatalogCsv(workbook, catalogKey, options = {}) {
   const skipThreshold = Number.isFinite(Number(options.skipThreshold))
     ? Number(options.skipThreshold)
     : 1;
+  const consignmentType = ['none', 'consignment', 'virtual'].includes(options.consignmentType)
+    ? options.consignmentType
+    : 'none';
+  const status = ['active', 'draft'].includes(options.status) ? options.status : 'active';
 
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
@@ -361,7 +392,7 @@ export function buildCatalogCsv(workbook, catalogKey, options = {}) {
   for (const book of books) {
     const shouldSkip = catalog.shouldSkip(book, skipThreshold);
     if (shouldSkip) continue;
-    const row = catalog.convertRow(book, seenHandles, seenSkus);
+    const row = catalog.convertRow(book, seenHandles, seenSkus, consignmentType, status);
     lines.push(csvRow(projectRow(row, MAIN_HEADER)));
     count += 1;
   }

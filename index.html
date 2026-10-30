@@ -42,6 +42,29 @@
           </label>
 
           <label class="block w-full md:max-w-md">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Consignación</span>
+            <select
+              id="consignmentTypeSelect"
+              class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              <option value="none">No</option>
+              <option value="consignment">Es consignación</option>
+              <option value="virtual">Consignación virtual</option>
+            </select>
+          </label>
+
+          <label class="block w-full md:max-w-md">
+            <span class="mb-2 block text-sm font-medium text-slate-700">Estado del producto</span>
+            <select
+              id="productStatusSelect"
+              class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              <option value="active">Activo</option>
+              <option value="draft">Borrador</option>
+            </select>
+          </label>
+
+          <label class="block w-full md:max-w-md">
             <span class="mb-2 block text-sm font-medium text-slate-700">Archivo Excel</span>
             <input
               id="fileInput"
