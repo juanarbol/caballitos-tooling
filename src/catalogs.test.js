@@ -61,6 +61,7 @@ describe('catalog conversion', () => {
     expect(result.csvText).not.toContain('ONLINE');
     expect(result.csvText).toContain('Procedencia,PROPIO,');
     expect(result.csvText).toContain(',ICARO,');
+    expect(result.csvText).toContain('"Autor X, ADMINISTRACION, Editorial Y"');
   });
 
   it('builds Siglo CSV rows for a valid workbook', () => {

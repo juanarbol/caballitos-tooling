@@ -220,7 +220,7 @@ export const catalogs = {
       const originValue = getOriginValue(consignmentType, this.vendor);
       const bodyHtml = toBodyHtml(title);
       const seoDescription = cleanText(`${book.autor} ${book.editorial}` || title).slice(0, 320);
-      const authorAndCategory = [book.autor, book.categoria].filter(Boolean).join(', ');
+      const tags = [book.autor, book.categoria, book.editorial].filter(Boolean).join(', ');
 
       return {
         Handle: handle,
@@ -229,7 +229,7 @@ export const catalogs = {
         Vendor: getVendorName(consignmentType, this.vendor),
         'Product Category': PRODUCT_CATEGORY,
         Type: TYPE,
-        Tags: authorAndCategory,
+        Tags: tags,
         Published: PUBLISHED,
         'Option1 Name': OPTION1_NAME,
         'Option1 Value': originValue,
